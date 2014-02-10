@@ -26,4 +26,14 @@ describe('leader-google-linkedin-company', function () {
       done();
     });
   });
+
+  it('should google for an linkedin domain outlook.com', function (done) {
+    var person = { domain: { name: 'outlook.com', disposable: false, personal: false }};
+    var context = {};
+    plugin.fn(person, context, function (err) {
+      if (err) return done(err);
+      assert(person.company.linkedin.url);
+      done();
+    });
+  });
 });

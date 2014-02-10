@@ -15,7 +15,8 @@
   "dependencies": {
     "obj-case": "0.0.3",
     "extend": "^1.2.1",
-    "google": "^0.3.2"
+    "google": "^0.3.2",
+    "debug": "~0.7.4"
   },
   "devDependencies": {
     "mocha": "^1.15.1"

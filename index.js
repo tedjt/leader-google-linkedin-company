@@ -3,6 +3,7 @@ var extend = require('extend');
 var google = require('google');
 var objCase = require('obj-case');
 var url = require('url');
+var debug = require('debug')('leader:google-linkedin-company');
 
 /**
  * Create a new leader plugin.
@@ -29,6 +30,7 @@ function plugin () {
       if (err) return next(err);
       if (results.links.length > 0) {
         var result = results.links[0];
+        debug('found result link: %s', result.link);
         var parsed = url.parse(result.link);
         if (parsed.host.indexOf('linkedin.com') !== -1) {
           extend(true, person, {
