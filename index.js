@@ -24,11 +24,11 @@ function plugin () {
   return function domainPlugin (person, context, next) {
     var domain = getDomain(person, context);
     if (!domain) return next();
-    var query = 'linkedin ' + domain;
+    var query = 'site:linkedin.com ' + domain;
     google(query, function (err, nextPage, results) {
       if (err) return next(err);
-      if (results.length > 0) {
-        var result = results[0];
+      if (results.links.length > 0) {
+        var result = results.links[0];
         var parsed = url.parse(result.link);
         if (parsed.host.indexOf('linkedin.com') !== -1) {
           extend(true, person, {
