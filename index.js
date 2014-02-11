@@ -52,7 +52,7 @@ function plugin () {
  */
 
 function wait (person, context) {
-  return getDomain(person, context);
+  return getDomain(person, context) && !getLinkedUrl(person, context);
 }
 
 /**
@@ -69,3 +69,12 @@ function getDomain (person, context) {
   else
     return null;
 }
+
+function getLinkedUrl(person, context) {
+  if (person.linkedin && person.linkedin.url) {
+    return person.linkedin.url;
+  } else {
+    return null;
+  }
+}
+

@@ -17,6 +17,12 @@ describe('leader-google-linkedin-company', function () {
     assert(plugin.wait(person, context));
   });
 
+  it('should wait if there is a company name and a linkedin url', function () {
+    var person = { domain: { name: 'segment.io', disposable: false, personal: false }, linkedin: {url: 'http:.../'} };
+    var context = {};
+    assert(!plugin.wait(person, context));
+  });
+
   it('should google for an linkedin domain', function (done) {
     var person = { domain: { name: 'segment.io', disposable: false, personal: false }};
     var context = {};
