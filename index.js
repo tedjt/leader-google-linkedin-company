@@ -36,6 +36,9 @@ function plugin () {
           extend(true, person, {
             company: { linkedin: { url: result.link }}
           });
+          extend(true, context, {
+            company: { google: {linkedin: { url: result.link }}}
+          });
         }
       }
       next();
