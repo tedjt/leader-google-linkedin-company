@@ -28,7 +28,7 @@ function plugin () {
     var query = 'site:linkedin.com ' + domain;
     google(query, function (err, nextPage, results) {
       if (err) return next(err);
-      if (results.links.length > 0) {
+      if (results && results.links && results.links.length > 0) {
         var result = results.links[0];
         debug('found result link: %s', result.link);
         var parsed = url.parse(result.link);
