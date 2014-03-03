@@ -1,6 +1,6 @@
 
 var extend = require('extend');
-var google = require('google');
+var google = require('google')();
 var objCase = require('obj-case');
 var url = require('url');
 var debug = require('debug')('leader:google-linkedin-company');
@@ -26,7 +26,7 @@ function plugin () {
     var domain = getDomain(person, context);
     if (!domain) return next();
     var query = 'site:linkedin.com ' + domain;
-    google(query, function (err, nextPage, results) {
+    google.query(query, function (err, nextPage, results) {
       if (err) return next(err);
       if (results && results.links && results.links.length > 0) {
         var result = results.links[0];

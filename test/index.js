@@ -3,6 +3,7 @@ var assert = require('assert');
 var Plugin = require('..');
 
 describe('leader-google-linkedin-company', function () {
+  this.timeout(30000);
 
   var plugin = Plugin();
 
