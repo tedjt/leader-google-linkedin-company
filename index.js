@@ -22,7 +22,7 @@ module.exports = function () {
  */
 
 function plugin () {
-  return function domainPlugin (person, context, next) {
+  return function googleLinkedinCompany (person, context, next) {
     var domain = getDomain(person, context);
     if (!domain) return next();
     var query = 'site:linkedin.com ' + domain;
