@@ -32,7 +32,8 @@ function plugin () {
         var result = results.links[0];
         debug('found result link: %s', result.link);
         var parsed = url.parse(result.link);
-        if (parsed.host.indexOf('linkedin.com') !== -1) {
+        if (parsed.host.indexOf('linkedin.com') !== -1 && 
+          result.link.indexOf('linkedin.com/redir/redirect') === -1) {
           extend(true, person, {
             company: { linkedin: { url: result.link }}
           });
