@@ -34,11 +34,12 @@ describe('leader-google-linkedin-company', function () {
     });
   });
 
-  it('should google for an linkedin domain outlook.com', function (done) {
+  it('should not google for an linkedin domain outlook.com', function (done) {
     var person = { domain: { name: 'outlook.com', disposable: false, personal: false }};
     var context = {};
     plugin.fn(person, context, function (err) {
       if (err) return done(err);
+      console.log(person);
       assert(person.company.linkedin.url);
       done();
     });
