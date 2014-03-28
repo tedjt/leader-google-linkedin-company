@@ -1,6 +1,6 @@
 
 var extend = require('extend');
-var google = require('google')();
+var Google = require('google');
 var objCase = require('obj-case');
 var url = require('url');
 var debug = require('debug')('leader:google-linkedin-company');
@@ -11,8 +11,8 @@ var debug = require('debug')('leader:google-linkedin-company');
  * @returns {Object}
  */
 
-module.exports = function () {
-  return { fn: plugin(), wait: wait };
+module.exports = function (proxyManager) {
+  return { fn: plugin(proxyManager), wait: wait };
 };
 
 /**
@@ -21,7 +21,8 @@ module.exports = function () {
  * @return {Function}
  */
 
-function plugin () {
+function plugin (proxyManager) {
+  var google = proxyManager ? Google({proxyManager: proxyManager}) : Google();
   return function googleLinkedinCompany (person, context, next) {
     var domain = getDomain(person, context);
     if (!domain) return next();
