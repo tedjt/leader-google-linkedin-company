@@ -1,6 +1,7 @@
 
 var extend = require('extend');
 var Google = require('google');
+var Bing = require('bing');
 var objCase = require('obj-case');
 var url = require('url');
 var debug = require('debug')('leader:google-linkedin-company');
@@ -23,30 +24,51 @@ module.exports = function (proxyManager) {
 
 function plugin (proxyManager) {
   var google = proxyManager ? Google({proxyManager: proxyManager}) : Google();
+  var bing = proxyManager ? Bing({proxyManager: proxyManager}) : Bing();
   return function googleLinkedinCompany (person, context, next) {
     var domain = getDomain(person, context);
     if (!domain) return next();
-    var query = 'site:linkedin.com ' + domain;
-    google.query(query, function (err, nextPage, results) {
-      if (err) return next(err);
-      if (results && results.links && results.links.length > 0) {
-        var result = results.links[0];
-        debug('found result link: %s', result.link);
-        var parsed = url.parse(result.link);
-        if (parsed.host && parsed.host.indexOf('linkedin.com') !== -1 &&
-          result.link.indexOf('/company/') !== -1 &&
-          result.link.indexOf('linkedin.com/redir/redirect') === -1) {
-          extend(true, person, {
-            company: { linkedin: { url: result.link }}
-          });
-          extend(true, context, {
-            company: { google: {linkedin: { url: result.link }}}
-          });
-        }
+    var query = 'site:linkedin.com company ' + domain;
+    // prefer bing
+    bing.query(query, function (err, nextPage, results) {
+      var result = handleResult(err, results, person, context);
+      if (!result) {
+        google.query(query, function (err, nextPage, results) {
+          if (err) return next(err);
+          handleResult(err, results, person, context);
+          return next();
+        });
+      } else {
+        // success for bing..
+        return next(err);
       }
-      next();
     });
   };
+}
+
+function handleResult(err, results, person, context) {
+  if (err) return false;
+  if (results && results.links && results.links.length > 0) {
+    results = results.links.filter(function(l) {
+      return l.link.indexOf('/company/') !== -1 && l.link.indexOf('linkedin.com/redir/redirect') === -1;
+    });
+    var result = results[0];
+    if (!result) {
+      return false;
+    }
+    debug('found result link: %s', result.link);
+    var parsed = url.parse(result.link);
+    if (parsed.host && parsed.host.indexOf('linkedin.com') !== -1) {
+      extend(true, person, {
+        company: { linkedin: { url: result.link }}
+      });
+      extend(true, context, {
+        company: { google: {linkedin: { url: result.link }}}
+      });
+      return result;
+    }
+  }
+  return false;
 }
 
 /**
