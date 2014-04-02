@@ -3,6 +3,7 @@ var extend = require('extend');
 var Google = require('google');
 var Bing = require('bing');
 var objCase = require('obj-case');
+var Levenshtein = require('levenshtein');
 var url = require('url');
 var debug = require('debug')('leader:google-linkedin-company');
 
@@ -16,6 +17,8 @@ module.exports = function (proxyManager) {
   return { fn: plugin(proxyManager), wait: wait };
 };
 
+module.exports.test = {accurateTitle: accurateTitle};
+
 /**
  * Create a domain googling leader plugin.
  *
@@ -26,16 +29,16 @@ function plugin (proxyManager) {
   var google = proxyManager ? Google({proxyManager: proxyManager}) : Google();
   var bing = proxyManager ? Bing({proxyManager: proxyManager}) : Bing();
   return function googleLinkedinCompany (person, context, next) {
-    var domain = getDomain(person, context);
-    if (!domain) return next();
-    var query = 'site:linkedin.com company ' + domain;
+    var companyQuery = getQueryTerm(person, context);
+    if (!companyQuery) return next();
+    var query = 'site:linkedin.com company ' + companyQuery;
     // prefer bing
     bing.query(query, function (err, nextPage, results) {
-      var result = handleResult(err, results, person, context);
+      var result = handleResult(err, companyQuery, results, person, context);
       if (!result) {
         google.query(query, function (err, nextPage, results) {
           if (err) return next(err);
-          handleResult(err, results, person, context);
+          handleResult(err, companyQuery, results, person, context);
           return next();
         });
       } else {
@@ -46,7 +49,7 @@ function plugin (proxyManager) {
   };
 }
 
-function handleResult(err, results, person, context) {
+function handleResult(err, companyQuery, results, person, context) {
   if (err) return false;
   if (results && results.links && results.links.length > 0) {
     results = results.links.filter(function(l) {
@@ -54,11 +57,14 @@ function handleResult(err, results, person, context) {
     });
     var result = results[0];
     if (!result) {
-      return false;
+      // we searched but didn't find anything. for now
+      // just return - don't want to search google
+      return true;
     }
     debug('found result link: %s', result.link);
     var parsed = url.parse(result.link);
-    if (parsed.host && parsed.host.indexOf('linkedin.com') !== -1) {
+    var okUrl = parsed.host && parsed.host.indexOf('linkedin.com') !== -1;
+    if (okUrl && accurateTitle(result, companyQuery)) {
       extend(true, person, {
         company: { linkedin: { url: result.link }}
       });
@@ -66,6 +72,31 @@ function handleResult(err, results, person, context) {
         company: { google: {linkedin: { url: result.link }}}
       });
       return result;
+    }
+  }
+  return false;
+}
+
+var MAX_DIST = 7;
+function accurateTitle (result, query) {
+  var title = (result.title || '').split('|')[0].trim().toLowerCase();
+  query = query.toLowerCase();
+  if (query) {
+    var lev = new Levenshtein(title, query);
+    if (lev.distance < MAX_DIST) {
+      return true;
+    }
+    // attempt to scan full company name by token for our query term
+    var splitTitle = title.split(/\s+/);
+    var splitQuery = query.split(/\s+/);
+    if (splitTitle.length > 1 && splitTitle.length > splitQuery.length) {
+      for (var i=0; i < splitTitle.length; i++) {
+        var substr = splitTitle.slice(i, i+splitQuery.length).join(' ');
+        lev = new Levenshtein(query, substr);
+        if (lev.distance < MAX_DIST) {
+          return true;
+        }
+      }
     }
   }
   return false;
@@ -80,7 +111,13 @@ function handleResult(err, results, person, context) {
  */
 
 function wait (person, context) {
-  return getDomain(person, context) && !getLinkedUrl(person, context);
+  return getQueryTerm(person, context) && !getCompanyLinkedUrl(person, context);
+}
+
+function getQueryTerm(person, context) {
+  // actually prefer domain as that will be crawled on company page.
+  // while many personal pages will reference the company name.
+  return getDomain(person, context) || getCompanyName(person, context);
 }
 
 /**
@@ -98,11 +135,11 @@ function getDomain (person, context) {
     return null;
 }
 
-function getLinkedUrl(person, context) {
-  if (person.linkedin && person.linkedin.url) {
-    return person.linkedin.url;
-  } else {
-    return null;
-  }
+function getCompanyName (person, context) {
+  return objCase(person, 'company.name');
+}
+
+function getCompanyLinkedUrl(person, context) {
+  return objCase(person, 'company.linkedin.url');
 }
 
