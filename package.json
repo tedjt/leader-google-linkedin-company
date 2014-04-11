@@ -13,12 +13,11 @@
     "plugin"
   ],
   "dependencies": {
-    "obj-case": "0.0.3",
     "extend": "^1.2.1",
     "google": "https://www.dropbox.com/s/ne08q3b8k71ycx3/node-google.tar.gz?dl=1",
     "bing": "https://www.dropbox.com/s/p4csm3p5lilqjmt/node-bing.tar.gz?dl=1",
-    "debug": "~0.7.4",
-    "levenshtein": "~1.0.4"
+    "leader-utils": "git://github.com/tedjt/leader-utils",
+    "debug": "~0.7.4"
   },
   "devDependencies": {
     "mocha": "^1.15.1"

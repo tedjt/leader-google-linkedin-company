@@ -2,8 +2,8 @@
 var extend = require('extend');
 var Google = require('google');
 var Bing = require('bing');
-var objCase = require('obj-case');
-var Levenshtein = require('levenshtein');
+var leaderUtils = require('leader-utils');
+var objCase = leaderUtils.objcase;
 var url = require('url');
 var debug = require('debug')('leader:google-linkedin-company');
 
@@ -82,22 +82,7 @@ function accurateTitle (result, query) {
   var title = (result.title || '').split('|')[0].trim().toLowerCase();
   query = query.toLowerCase();
   if (query) {
-    var lev = new Levenshtein(title, query);
-    if (lev.distance < MAX_DIST) {
-      return true;
-    }
-    // attempt to scan full company name by token for our query term
-    var splitTitle = title.split(/\s+/);
-    var splitQuery = query.split(/\s+/);
-    if (splitTitle.length > 1 && splitTitle.length > splitQuery.length) {
-      for (var i=0; i < splitTitle.length; i++) {
-        var substr = splitTitle.slice(i, i+splitQuery.length).join(' ');
-        lev = new Levenshtein(query, substr);
-        if (lev.distance < MAX_DIST) {
-          return true;
-        }
-      }
-    }
+    return leaderUtils.accurateTitle(title, query);
   }
   return false;
 }
@@ -117,29 +102,13 @@ function wait (person, context) {
 function getQueryTerm(person, context) {
   // actually prefer domain as that will be crawled on company page.
   // while many personal pages will reference the company name.
-  return getDomain(person, context) || getCompanyName(person, context);
+  var company = leaderUtils.getCompanyName(person);
+  var domain = leaderUtils.getInterestingDomain(person);
+  var companyDomain = leaderUtils.getCompanyDomain(person);
+  return companyDomain || domain || company;
 }
 
-/**
- * Get an interesting domain.
- *
- * @param {Object} context
- * @param {Object} person
- * @return {String}
- */
-
-function getDomain (person, context) {
-  if (person.domain && !person.domain.disposable && !person.domain.personal)
-    return person.domain.name;
-  else
-    return null;
-}
-
-function getCompanyName (person, context) {
-  return objCase(person, 'company.name');
-}
 
 function getCompanyLinkedUrl(person, context) {
   return objCase(person, 'company.linkedin.url');
 }
-
