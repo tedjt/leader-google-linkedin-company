@@ -3,7 +3,7 @@ var assert = require('assert');
 var Plugin = require('..');
 
 describe('leader-google-linkedin-company', function () {
-  this.timeout(30000);
+  this.timeout(90000);
 
   var plugin = Plugin();
 
@@ -43,11 +43,12 @@ describe('leader-google-linkedin-company', function () {
     });
   });
 
-  it('should google for an linkedin domain', function (done) {
+  it.only('should google for an linkedin domain', function (done) {
     var person = { domain: { name: 'segment.io', disposable: false, personal: false }};
     var context = {};
     plugin.fn(person, context, function (err) {
       if (err) return done(err);
+      console.log(person);
       assert(person.company.linkedin.url);
       done();
     });

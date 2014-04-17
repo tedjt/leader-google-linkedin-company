@@ -36,10 +36,33 @@ function plugin (proxyManager) {
     bing.query(query, function (err, nextPage, results) {
       var result = handleResult(err, companyQuery, results, person, context);
       if (!result) {
+        debug('bing scrape failed - scraping google');
         google.query(query, function (err, nextPage, results) {
-          if (err) return next(err);
-          handleResult(err, companyQuery, results, person, context);
-          return next();
+          var success = handleResult(err, companyQuery, results, person, context);
+          // we make sure there is an error before retrying in case no results were found.
+          // don't want to use up quota.
+          if (!success && err) {
+            debug('google scrape failed %s, - bing api', err.message);
+            // fall back on api for bing.
+            bing.queryApi(query, function (err, nextPage, results) {
+              var success = handleResult(err, companyQuery, results, person, context);
+              if (!success) {
+                debug('bing api failed %s, - falling back to google api', err);
+                // last but not least - fallback on google api.
+                google.queryApi(query, function(err, nextPage, results) {
+                  if (err) return next(err); 
+                  handleResult(err, companyQuery, results, person, context);
+                  next();
+                });
+              } else {
+                // success for bing api.
+                next(err);
+              }
+            });
+          } else {
+            // success for google
+            next(err);
+          }
         });
       } else {
         // success for bing..
@@ -62,8 +85,7 @@ function handleResult(err, companyQuery, results, person, context) {
       return true;
     }
     debug('found result link: %s', result.link);
-    var parsed = url.parse(result.link);
-    var okUrl = parsed.host && parsed.host.indexOf('linkedin.com') !== -1;
+    var okUrl = result.href.indexOf('linkedin.com') !== -1;
     if (okUrl && accurateTitle(result, companyQuery)) {
       extend(true, person, {
         company: { linkedin: { url: result.link }}
